@@ -417,7 +417,7 @@ void ckTime(uint64_t start, const char* where) {
   uint64_t now = MsTime();
   if ((now-start) > 1000) {
     // If we are taking more than a second, log about it.
-    ALOGW("Slow operation: %"PRIu64" ms in %s", (uint64_t)(now-start), where);
+    ALOGW("Slow operation: %" PRIu64 " ms in %s", (uint64_t)(now-start), where);
   }
 }
 
