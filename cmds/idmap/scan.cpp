@@ -95,11 +95,11 @@ namespace {
         int priority = -1;
         for (size_t i = 0; i < N; ++i) {
             size_t len;
-            String16 key((const char16_t*)parser.getAttributeName(i, &len));
+            String16 key(parser.getAttributeName(i, &len));
             if (key == String16("targetPackage")) {
                 const uint16_t *p = parser.getAttributeStringValue(i, &len);
                 if (p) {
-                    target = String16((const char16_t*)p, len);
+                    target = String16(p, len);
                 }
             } else if (key == String16("priority")) {
                 Res_value v;
@@ -131,7 +131,7 @@ namespace {
             type = parser.next();
             if (type == ResXMLParser::START_TAG) {
                 size_t len;
-                String16 tag((const char16_t*)parser.getElementName(&len));
+                String16 tag(parser.getElementName(&len));
                 if (tag == String16("overlay")) {
                     return parse_overlay_tag(parser, target_package_name);
                 }

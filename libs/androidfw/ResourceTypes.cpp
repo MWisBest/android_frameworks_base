@@ -689,7 +689,7 @@ decodeLength(const uint8_t** str)
     return len;
 }
 
-const char16_t* ResStringPool::stringAt(size_t idx, size_t* u16len) const
+const uint16_t* ResStringPool::stringAt(size_t idx, size_t* u16len) const
 {
     if (mError == NO_ERROR && idx < mHeader->stringCount) {
         const bool isUTF8 = (mHeader->flags&ResStringPool_header::UTF8_FLAG) != 0;
@@ -1016,7 +1016,7 @@ int32_t ResXMLParser::getCommentID() const
 const uint16_t* ResXMLParser::getComment(size_t* outLen) const
 {
     int32_t id = getCommentID();
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 uint32_t ResXMLParser::getLineNumber() const
@@ -1035,7 +1035,7 @@ int32_t ResXMLParser::getTextID() const
 const uint16_t* ResXMLParser::getText(size_t* outLen) const
 {
     int32_t id = getTextID();
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 ssize_t ResXMLParser::getTextValue(Res_value* outValue) const
@@ -1059,7 +1059,7 @@ const uint16_t* ResXMLParser::getNamespacePrefix(size_t* outLen) const
 {
     int32_t id = getNamespacePrefixID();
     //printf("prefix=%d  event=%p\n", id, mEventCode);
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 int32_t ResXMLParser::getNamespaceUriID() const
@@ -1074,7 +1074,7 @@ const uint16_t* ResXMLParser::getNamespaceUri(size_t* outLen) const
 {
     int32_t id = getNamespaceUriID();
     //printf("uri=%d  event=%p\n", id, mEventCode);
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 int32_t ResXMLParser::getElementNamespaceID() const
@@ -1091,7 +1091,7 @@ int32_t ResXMLParser::getElementNamespaceID() const
 const uint16_t* ResXMLParser::getElementNamespace(size_t* outLen) const
 {
     int32_t id = getElementNamespaceID();
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 int32_t ResXMLParser::getElementNameID() const
@@ -1108,7 +1108,7 @@ int32_t ResXMLParser::getElementNameID() const
 const uint16_t* ResXMLParser::getElementName(size_t* outLen) const
 {
     int32_t id = getElementNameID();
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 size_t ResXMLParser::getAttributeCount() const
@@ -1139,7 +1139,7 @@ const uint16_t* ResXMLParser::getAttributeNamespace(size_t idx, size_t* outLen) 
     int32_t id = getAttributeNamespaceID(idx);
     //printf("attribute namespace=%d  idx=%d  event=%p\n", id, idx, mEventCode);
     //XML_NOISY(printf("getAttributeNamespace 0x%x=0x%x\n", idx, id));
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 const char* ResXMLParser::getAttributeNamespace8(size_t idx, size_t* outLen) const
@@ -1170,7 +1170,7 @@ const uint16_t* ResXMLParser::getAttributeName(size_t idx, size_t* outLen) const
     int32_t id = getAttributeNameID(idx);
     //printf("attribute name=%d  idx=%d  event=%p\n", id, idx, mEventCode);
     //XML_NOISY(printf("getAttributeName 0x%x=0x%x\n", idx, id));
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 const char* ResXMLParser::getAttributeName8(size_t idx, size_t* outLen) const
@@ -1209,7 +1209,7 @@ const uint16_t* ResXMLParser::getAttributeStringValue(size_t idx, size_t* outLen
 {
     int32_t id = getAttributeValueStringID(idx);
     //XML_NOISY(printf("getAttributeValue 0x%x=0x%x\n", idx, id));
-    return id >= 0 ? (const uint16_t*)mTree.mStrings.stringAt(id, outLen) : NULL;
+    return id >= 0 ? mTree.mStrings.stringAt(id, outLen) : NULL;
 }
 
 int32_t ResXMLParser::getAttributeDataType(size_t idx) const
@@ -1330,8 +1330,8 @@ ssize_t ResXMLParser::indexOfAttribute(const char16_t* ns, size_t nsLen,
                     String8(attr, attrLen).string(), attrLen));
             for (size_t i=0; i<N; i++) {
                 size_t curNsLen = 0, curAttrLen = 0;
-                const char16_t* curNs = (const char16_t*)getAttributeNamespace(i, &curNsLen);
-                const char16_t* curAttr = (const char16_t*)getAttributeName(i, &curAttrLen);
+                const char16_t* curNs = getAttributeNamespace(i, &curNsLen);
+                const char16_t* curAttr = getAttributeName(i, &curAttrLen);
                 STRING_POOL_NOISY(ALOGI("  curNs=%s (%d), curAttr=%s (%d)",
                         String8(curNs, curNsLen).string(), curNsLen,
                         String8(curAttr, curAttrLen).string(), curAttrLen));
@@ -4250,7 +4250,7 @@ bool ResTable::expandResourceRef(const uint16_t* refStr, size_t refLen,
 {
     const char16_t* packageEnd = NULL;
     const char16_t* typeEnd = NULL;
-    const char16_t* p = (const char16_t*)refStr;
+    const char16_t* p = refStr;
     const char16_t* const end = p + refLen;
     while (p < end) {
         if (*p == ':') packageEnd = p;
@@ -4260,7 +4260,7 @@ bool ResTable::expandResourceRef(const uint16_t* refStr, size_t refLen,
         }
         p++;
     }
-    p = (char16_t*)refStr;
+    p = refStr;
     if (*p == '@') p++;
 
     if (outPublicOnly != NULL) {
@@ -4659,7 +4659,7 @@ bool ResTable::stringToValue(Res_value* outValue, String16* outString,
                 resourceNameLen = len - 1;
             }
             String16 package, type, name;
-            if (!expandResourceRef((const uint16_t*)resourceRefName,resourceNameLen, &package, &type, &name,
+            if (!expandResourceRef(resourceRefName,resourceNameLen, &package, &type, &name,
                                    defType, defPackage, &errorMsg)) {
                 if (accessor != NULL) {
                     accessor->reportError(accessorCookie, errorMsg);
@@ -4824,7 +4824,7 @@ bool ResTable::stringToValue(Res_value* outValue, String16* outString,
 
         static const String16 attr16("attr");
         String16 package, type, name;
-        if (!expandResourceRef((const uint16_t*)s+1, len-1, &package, &type, &name,
+        if (!expandResourceRef(s+1, len-1, &package, &type, &name,
                                &attr16, defPackage, &errorMsg)) {
             if (accessor != NULL) {
                 accessor->reportError(accessorCookie, errorMsg);
@@ -5659,7 +5659,7 @@ status_t ResTable::parsePackage(const ResTable_package* const pkg,
         idx = mPackageGroups.size() + 1;
 
         char16_t tmpName[sizeof(pkg->name)/sizeof(char16_t)];
-        strcpy16_dtoh((uint16_t*)tmpName, (const uint16_t*)pkg->name, sizeof(pkg->name)/sizeof(char16_t));
+        strcpy16_dtoh(tmpName, pkg->name, sizeof(pkg->name)/sizeof(char16_t));
         group = new PackageGroup(this, String16(tmpName), id);
         if (group == NULL) {
             delete package;
@@ -5892,7 +5892,7 @@ status_t DynamicRefTable::load(const ResTable_lib_header* const header)
     for (uint32_t entryIndex = 0; entryIndex < entryCount; entryIndex++) {
         uint32_t packageId = dtohl(entry->packageId);
         char16_t tmpName[sizeof(entry->packageName) / sizeof(char16_t)];
-        strcpy16_dtoh((uint16_t*)tmpName, (const uint16_t*)entry->packageName, sizeof(entry->packageName) / sizeof(char16_t));
+        strcpy16_dtoh(tmpName, entry->packageName, sizeof(entry->packageName) / sizeof(char16_t));
         LIB_NOISY(ALOGV("Found lib entry %s with id %d\n", String8(tmpName).string(),
                 dtohl(entry->packageId)));
         if (packageId >= 256) {
