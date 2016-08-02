@@ -6584,7 +6584,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             }
         }
 
-        if (Build.TAGS.equals("test-keys") &&
+        if (Build.TAGS.contains("test-keys") &&
                 !pkg.applicationInfo.sourceDir.startsWith(Environment.getRootDirectory().getPath()) &&
                 !pkg.applicationInfo.sourceDir.startsWith("/vendor")) {
             Object obj = mSettings.getUserIdLPr(1000);
