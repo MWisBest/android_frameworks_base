@@ -23,12 +23,24 @@
 #include <android_runtime/AndroidRuntime.h>
 #include <private/android_filesystem_config.h>  // for AID_SYSTEM
 
+
+#ifdef USE_XPOSED_FRAMEWORK
+#include "xposed.h"
+#include <dlfcn.h>
+
+static bool isXposedLoaded = false;
+#endif
+
+
 namespace android {
 
 static void app_usage()
 {
     fprintf(stderr,
         "Usage: app_process [java-options] cmd-dir start-class-name [options]\n");
+#ifdef USE_XPOSED_FRAMEWORK
+    fprintf(stderr, "   with Xposed support\n");
+#endif
 }
 
 class AppRuntime : public AndroidRuntime
@@ -49,6 +61,12 @@ public:
 
     virtual void onVmCreated(JNIEnv* env)
     {
+#ifdef USE_XPOSED_FRAMEWORK
+        if (isXposedLoaded) {
+            xposed::onVmCreated(env);
+        }
+#endif
+
         if (mClassName.isEmpty()) {
             return; // Zygote. Nothing to do here.
         }
@@ -70,6 +88,9 @@ public:
         mClass = env->FindClass(slashClassName);
         if (mClass == NULL) {
             ALOGE("ERROR: could not find class '%s'\n", mClassName.string());
+#ifdef USE_XPOSED_FRAMEWORK
+            env->ExceptionDescribe();
+#endif
         }
         free(slashClassName);
 
@@ -194,6 +215,12 @@ int main(int argc, char* const argv[])
         }
     }
 
+#ifdef USE_XPOSED_FRAMEWORK
+    if (xposed::handleOptions(argc, argv)) {
+        return 0;
+    }
+#endif
+
     AppRuntime runtime(argv[0], computeArgBlockSize(argc, argv));
     // Process command line arguments
     // ignore argv[0]
@@ -304,9 +331,19 @@ int main(int argc, char* const argv[])
     }
 
     if (zygote) {
+#ifdef USE_XPOSED_FRAMEWORK
+        isXposedLoaded = xposed::initialize(true, startSystemServer, NULL, argc, argv);
+        runtime.start(isXposedLoaded ? XPOSED_CLASS_DOTS_ZYGOTE : "com.android.internal.os.ZygoteInit", args, zygote);
+#else
         runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
+#endif
     } else if (className) {
+#ifdef USE_XPOSED_FRAMEWORK
+        isXposedLoaded = xposed::initialize(false, false, className, argc, argv);
+        runtime.start(isXposedLoaded ? XPOSED_CLASS_DOTS_TOOLS : "com.android.internal.os.RuntimeInit", args, zygote);
+#else
         runtime.start("com.android.internal.os.RuntimeInit", args, zygote);
+#endif
     } else {
         fprintf(stderr, "Error: no class name or --zygote supplied.\n");
         app_usage();

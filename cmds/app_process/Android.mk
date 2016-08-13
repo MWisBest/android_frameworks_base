@@ -21,7 +21,7 @@ LOCAL_SHARED_LIBRARIES := \
     liblog \
     libbinder \
     libandroid_runtime \
-    $(app_process_common_shared_libs) \
+    $(app_process_common_shared_libs)
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libsigchain
 
@@ -30,7 +30,22 @@ LOCAL_MULTILIB := both
 LOCAL_MODULE_STEM_32 := app_process32
 LOCAL_MODULE_STEM_64 := app_process64
 
-LOCAL_CFLAGS += -Wall -Werror -Wunused -Wunreachable-code
+LOCAL_CFLAGS := -Wall -Werror -Wextra -Wunused
+
+ifeq ($(USE_XPOSED_FRAMEWORK),true)
+    LOCAL_CFLAGS += -DUSE_XPOSED_FRAMEWORK
+
+    LOCAL_SRC_FILES += \
+        xposed.cpp \
+        xposed_logcat.cpp \
+        xposed_service.cpp \
+        xposed_safemode.cpp
+
+    LOCAL_SHARED_LIBRARIES += \
+        libselinux
+
+    LOCAL_STRIP_MODULE := keep_symbols
+endif
 
 include $(BUILD_EXECUTABLE)
 
@@ -38,39 +53,45 @@ include $(BUILD_EXECUTABLE)
 # depending on the target configuration.
 include  $(BUILD_SYSTEM)/executable_prefer_symlink.mk
 
-# Build a variant of app_process binary linked with ASan runtime.
-# ARM-only at the moment.
-ifeq ($(TARGET_ARCH),arm)
+
+##########################################################
+# Xposed Library for ART-specific functions
+##########################################################
 
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES:= \
-    app_main.cpp
+include art/build/Android.common_build.mk
+$(eval $(call set-target-local-clang-vars))
+$(eval $(call set-target-local-cflags-vars,ndebug))
 
-LOCAL_SHARED_LIBRARIES := \
-    libcutils \
-    libutils \
+LOCAL_C_INCLUDES += \
+    external/valgrind \
+    external/valgrind/include
+
+LOCAL_SRC_FILES += \
+    libxposed_common.cpp \
+    libxposed_art.cpp
+
+LOCAL_C_INCLUDES += \
+    art/runtime \
+    external/gtest/include
+
+LOCAL_SHARED_LIBRARIES += \
+    libart \
     liblog \
-    libbinder \
-    libandroid_runtime \
-    $(app_process_common_shared_libs) \
+    libcutils \
+    libandroidfw \
+    libnativehelper
 
-LOCAL_WHOLE_STATIC_LIBRARIES := libsigchain
-
-LOCAL_LDFLAGS := -ldl -Wl,--version-script,art/sigchainlib/version-script.txt -Wl,--export-dynamic
-LOCAL_CPPFLAGS := -std=c++11
-
-LOCAL_MODULE := app_process__asan
+LOCAL_MODULE := libxposed_art
+LOCAL_MODULE_TAGS := optional
+LOCAL_STRIP_MODULE := keep_symbols
 LOCAL_MULTILIB := both
-LOCAL_MODULE_STEM_32 := app_process32
-LOCAL_MODULE_STEM_64 := app_process64
 
-LOCAL_ADDRESS_SANITIZER := true
-LOCAL_CLANG := true
-LOCAL_MODULE_PATH := $(TARGET_OUT_EXECUTABLES)/asan
+# Always build both architectures (if applicable)
+ifeq ($(TARGET_IS_64_BIT),true)
+  $(LOCAL_MODULE): $(LOCAL_MODULE)$(TARGET_2ND_ARCH_MODULE_SUFFIX)
+endif
 
-LOCAL_CFLAGS += -Wall -Werror -Wunused -Wunreachable-code
+include $(BUILD_SHARED_LIBRARY)
 
-include $(BUILD_EXECUTABLE)
-
-endif # ifeq($(TARGET_ARCH),arm)
